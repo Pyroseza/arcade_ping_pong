@@ -17,3 +17,6 @@
 
 ## run the main script
     python main.py
+
+
+![Preview](Screenshot%202020-05-24%20at%2016.39.25.png)
