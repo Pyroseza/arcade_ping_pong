@@ -1,32 +1,18 @@
 import arcade
 import random
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 500
-SCREEN_TITLE = "Move Paddle"
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 800
+SCREEN_TITLE = "Ping Pong"
 MOVEMENT_SPEED = 3
 
-# Size of the rectangle
-RECT_WIDTH = 25
-RECT_HEIGHT = 25
-
-# Ball scale
-BALL_SCALE = 0.5
+# Sprite draw scale
+DRAW_SCALE = 0.5
 
 
 class Ball(arcade.Sprite):
-
-    def __init__(self,
-                 filename: str = None,
-                 scale: float = 1,
-                 image_x: float = 0, image_y: float = 0,
-                 image_width: float = 0, image_height: float = 0,
-                 center_x: float = 0, center_y: float = 0,
-                 repeat_count_x: int = 1, repeat_count_y: int = 1):
-        super().__init__(filename, scale, image_x, image_y, image_width, image_height,
-                         center_x, center_y, repeat_count_x, repeat_count_y)
-        self.dir_x = 0
-        self.dir_y = 0
+    dir_x = 0
+    dir_y = 0
 
     def reset_pos(self):
         # position the ball in a random location
@@ -35,91 +21,55 @@ class Ball(arcade.Sprite):
         self.dir_x = random.choice([-1, 1])
         self.dir_y = random.choice([-1, 1])
 
-    def move(self):
-        self.center_x += (MOVEMENT_SPEED * self.dir_x)
-        self.center_y += (MOVEMENT_SPEED * self.dir_y)
+    def check_collisions(self, paddle_list):
+        # TODO: round should end or the game should end if the below collision occurred
+        # has the ball gone off to the side of the screen
+        if self.left <= 0 or self.right >= SCREEN_WIDTH:
+            self.dir_x = 0
+            self.dir_y = 0
+
+        # has the ball gone above the screen height
         if self.top > SCREEN_HEIGHT:
             self.dir_y = -1
+        # has the ball gone below the screen height
         if self.bottom < 0:
             self.dir_y = 1
-        if self.right > SCREEN_WIDTH:
-            self.dir_x = -1
-        if self.left < 0:
-            self.dir_x = 1
+
+        # test if it has collided with a paddle
+        hits = self.collides_with_list(paddle_list)
+        if hits:
+            self.dir_x = 1 if self.dir_x == -1 else -1
+
+    def update(self, paddle_list):
+        # always move the ball first
+        self.center_x += (MOVEMENT_SPEED * self.dir_x)
+        self.center_y += (MOVEMENT_SPEED * self.dir_y)
+        self.check_collisions(paddle_list)
 
 
-class Paddle:
-    """CREATE THE TWO PADDLES AND MAKE THEM MOVE"""
-    def __init__(self, position_x, position_y, change_x, change_y, height, width, color):
+class Paddle(arcade.Sprite):
+    dir_y = 0
 
-        # Take the parameters of the init function above, and create instance variables out of them.
-        self.position_x = position_x  # position of x
-        self.position_y = position_y  # position of y
-        self.change_x = change_x  # the change in x of the paddle
-        self.change_y = change_y  # the change in y of the paddle
-        self.height = height  # height of the paddle
-        self.width = width  # width of the paddle
-        self.color = color  # color of the paddle
+    def reset_pos(self, x, y):
+        self.center_x = x
+        self.center_y = y
 
-    def draw(self):
-        """ Draw the paddle with the instance variables we have. """
-        arcade.draw_rectangle_filled(self.position_x, self.position_y, self.height, self.width, self.color)
-
-    def update(self):
-        # Move the paddle
-        self.position_y += self.change_y
-        self.position_x += self.change_x
-
-        # See if the paddle hit the edge of the screen. If so, change direction
-        if self.position_x < self.width:
-            self.position_x = self.width
-
-        if self.position_x > SCREEN_WIDTH - self.width:
-            self.position_x = SCREEN_WIDTH - self.width
-
-        if self.position_y < self.height:
-            self.position_y = self.height
-
-        if self.position_y > SCREEN_HEIGHT - self.height:
-            self.position_y = SCREEN_HEIGHT - self.height
-
-
-class Paddle_2:
-    def __init__(self, position_x, position_y, change_x, change_y, height, width, color):
-
-        # Take the parameters of the init function above, and create instance variables out of them.
-        self.position_x = position_x
-        self.position_y = position_y
-        self.change_x = change_x
-        self.change_y = change_y
-        self.height = height
-        self.width = width
-        self.color = color
-
-    def draw(self):
-        """ Draw the paddle with the instance variables we have. """
-        arcade.draw_rectangle_filled(self.position_x, self.position_y, self.height, self.width, self.color)
+    def check_bounds(self):
+        # has the paddle gone above the screen height
+        if self.top > SCREEN_HEIGHT and self.change_y == 1:
+            self.change_y = 0
+        # has the ball gone below the screen height
+        if self.bottom < 0 and self.change_y == -1:
+            self.change_y = 0
 
     def update(self):
+        # first check the bounds make sure we don't go where we can't
+        self.check_bounds()
         # Move the paddle
-        self.position_y += self.change_y
-        self.position_x += self.change_x
-
-        # See if the paddle hit the edge of the screen. If so, change direction
-        if self.position_x < self.width:
-            self.position_x = self.width
-
-        if self.position_x > SCREEN_WIDTH - self.width:
-            self.position_x = SCREEN_WIDTH - self.width
-
-        if self.position_y < self.height:
-            self.position_y = self.height
-
-        if self.position_y > SCREEN_HEIGHT - self.height:
-            self.position_y = SCREEN_HEIGHT - self.height
+        self.center_y += (MOVEMENT_SPEED * self.change_y)
 
 
-class MyGame_2(arcade.Window):
+class MyGame(arcade.Window):
 
     def __init__(self, width, height, title):
 
@@ -133,65 +83,52 @@ class MyGame_2(arcade.Window):
         arcade.set_background_color(arcade.color.ASH_GREY)
 
         # create the ball
-        self.ball = Ball(":resources:images/pinball/pool_cue_ball.png", BALL_SCALE)
+        self.ball = Ball(":resources:images/pinball/pool_cue_ball.png", DRAW_SCALE)
         self.ball.reset_pos()
 
-        # Create our paddle
-        self.paddle_2 = Paddle_2(25, 350, 0, 0, 25, 70, arcade.color.AUBURN)
-        self.paddle = Paddle(775, 350, 0, 0, 25, 70, arcade.color.AUBURN)
+        # Create our paddle objects
+        self.paddles = arcade.SpriteList()
+        self.paddle_1 = Paddle(":resources:images/tiles/boxCrate.png", DRAW_SCALE)
+        self.paddle_1.reset_pos(self.paddle_1.width, SCREEN_HEIGHT/2)
+        self.paddles.append(self.paddle_1)
+        self.paddle_2 = Paddle(":resources:images/tiles/boxCrate.png", DRAW_SCALE)
+        self.paddle_2.reset_pos(SCREEN_WIDTH - self.paddle_2.width, SCREEN_HEIGHT/2)
+        self.paddles.append(self.paddle_2)
+
 
     def on_draw(self):
         """ Called whenever we need to draw the window. """
         arcade.start_render()
         self.ball.draw()
+        self.paddle_1.draw()
         self.paddle_2.draw()
-        self.paddle.draw()
 
     def on_update(self, delta_time):
-        self.ball.move()
+        self.paddle_1.update()
         self.paddle_2.update()
-        self.paddle.update()
+        self.ball.update(self.paddles)
 
     def on_key_press(self, key, modifiers):
         """ Called whenever the user presses a key. """
         if key == arcade.key.W:
-            self.paddle_2.change_y = MOVEMENT_SPEED
+            self.paddle_1.change_y = 1
         elif key == arcade.key.S:
-            self.paddle_2.change_y = -MOVEMENT_SPEED
+            self.paddle_1.change_y = -1
         if key == arcade.key.UP:
-            self.paddle.change_y = MOVEMENT_SPEED
+            self.paddle_2.change_y = 1
         elif key == arcade.key.DOWN:
-            self.paddle.change_y = -MOVEMENT_SPEED
+            self.paddle_2.change_y = -1
 
     def on_key_release(self, key, modifiers):
         """ Called whenever a user releases a key. """
         if key == arcade.key.W or key == arcade.key.S:
-            self.paddle_2.change_y = 0
+            self.paddle_1.change_y = 0
         if key == arcade.key.UP or key == arcade.key.DOWN:
-            self.paddle.change_y = 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""ADD THE BALLS TO THE GAME AND MAKE THEM BOUNCE ON PADDLE AND ON TOP/DOWN SCREEN"""
-
-
+            self.paddle_2.change_y = 0
 
 
 def main():
-    MyGame_2(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
     arcade.run()
 
