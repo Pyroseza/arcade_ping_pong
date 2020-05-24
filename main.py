@@ -11,44 +11,45 @@ DRAW_SCALE = 0.5
 
 
 class Ball(arcade.Sprite):
-    dir_x = 0
-    dir_y = 0
 
     def reset_pos(self):
         # position the ball in a random location
         self.center_x = random.randrange(SCREEN_WIDTH)
         self.center_y = random.randrange(SCREEN_HEIGHT)
-        self.dir_x = random.choice([-1, 1])
-        self.dir_y = random.choice([-1, 1])
+        self.change_x = random.choice([-1, 1])
+        self.change_y = random.choice([-1, 1])
 
     def check_collisions(self, paddle_list):
         # TODO: round should end or the game should end if the below collision occurred
         # has the ball gone off to the side of the screen
         if self.left <= 0 or self.right >= SCREEN_WIDTH:
-            self.dir_x = 0
-            self.dir_y = 0
+            self.change_x = 0
+            self.change_y = 0
 
         # has the ball gone above the screen height
         if self.top > SCREEN_HEIGHT:
-            self.dir_y = -1
+            self.change_y = -1
         # has the ball gone below the screen height
         if self.bottom < 0:
-            self.dir_y = 1
+            self.change_y = 1
 
-        # test if it has collided with a paddle
+        # test if the ball has collided with a paddle
         hits = self.collides_with_list(paddle_list)
         if hits:
-            self.dir_x = 1 if self.dir_x == -1 else -1
+            # little workaround to make sure the ball does not appear to glitch back and forth 
+            if self.center_x < SCREEN_WIDTH/2 and self.change_x == -1:
+                self.change_x = 1
+            elif self.center_x > SCREEN_WIDTH/2 and self.change_x == 1:
+                self.change_x = -1
 
     def update(self, paddle_list):
         # always move the ball first
-        self.center_x += (MOVEMENT_SPEED * self.dir_x)
-        self.center_y += (MOVEMENT_SPEED * self.dir_y)
+        self.center_x += (MOVEMENT_SPEED * self.change_x)
+        self.center_y += (MOVEMENT_SPEED * self.change_y)
         self.check_collisions(paddle_list)
 
 
 class Paddle(arcade.Sprite):
-    dir_y = 0
 
     def reset_pos(self, x, y):
         self.center_x = x
@@ -135,4 +136,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
