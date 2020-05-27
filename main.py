@@ -36,7 +36,7 @@ class Ball(arcade.Sprite):
         # test if the ball has collided with a paddle
         hits = self.collides_with_list(paddle_list)
         if hits:
-            # little workaround to make sure the ball does not appear to glitch back and forth 
+            # little workaround to make sure the ball does not appear to glitch back and forth
             if self.center_x < SCREEN_WIDTH/2 and self.change_x == -1:
                 self.change_x = 1
             elif self.center_x > SCREEN_WIDTH/2 and self.change_x == 1:
@@ -106,8 +106,15 @@ class MyGame(arcade.Window):
 
     def on_update(self, delta_time):
         self.paddle_1.update()
+        self.bot_move()
         self.paddle_2.update()
         self.ball.update(self.paddles)
+
+    def bot_move(self):
+        if self.ball.center_y != self.paddle_2.center_y:
+            self.paddle_2.change_y = self.ball.change_y
+        else:
+            self.paddle_2.change_y = 0
 
     def on_key_press(self, key, modifiers):
         """ Called whenever the user presses a key. """
@@ -115,17 +122,18 @@ class MyGame(arcade.Window):
             self.paddle_1.change_y = 1
         elif key == arcade.key.S:
             self.paddle_1.change_y = -1
-        if key == arcade.key.UP:
-            self.paddle_2.change_y = 1
-        elif key == arcade.key.DOWN:
-            self.paddle_2.change_y = -1
+        # if key == arcade.key.UP:
+        #     self.paddle_2.change_y = 1
+        # elif key == arcade.key.DOWN:
+        #     self.paddle_2.change_y = -1
 
     def on_key_release(self, key, modifiers):
         """ Called whenever a user releases a key. """
         if key == arcade.key.W or key == arcade.key.S:
             self.paddle_1.change_y = 0
-        if key == arcade.key.UP or key == arcade.key.DOWN:
-            self.paddle_2.change_y = 0
+        # if key == arcade.key.UP or key == arcade.key.DOWN:
+        # if key == arcade.key.UP or key == arcade.key.DOWN:
+        #     self.paddle_2.change_y = 0
 
 
 def main():
@@ -136,5 +144,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
